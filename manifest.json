@@ -10,14 +10,21 @@
   ],
   "host_permissions": [
     "https://www.amazon.com/*",
-    "https://www.amazon.com.tr/*"
+    "https://www.amazon.com.tr/*",
+    "https://www.hepsiburada.com/*",
+    "https://www.trendyol.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.amazon.com/*", "https://www.amazon.com.tr/*"],
+      "matches": [
+        "https://www.amazon.com/*",
+        "https://www.amazon.com.tr/*",
+        "https://www.hepsiburada.com/*",
+        "https://www.trendyol.com/*"
+      ],
       "js": ["content.js"],
       "css": ["src/Popup.css"]
     }

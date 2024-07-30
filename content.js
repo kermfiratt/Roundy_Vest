@@ -20,7 +20,8 @@ document.addEventListener('click', function(event) {
     'button[name="submit.add-to-cart-ubb"]', // Turkish add to cart button
     'button#add-to-cart-button-ubb', // Turkish add to cart button
     'input[value="Sepete Ekle"]', // Turkish add to cart button
-    'button[value="Sepete Ekle"]' // Turkish add to cart button
+    'button[value="Sepete Ekle"]', // Turkish add to cart button
+    '.add-to-basket-button-text' // Trendyol add to cart button
   ];
 
   const clickedElement = event.target;
@@ -32,42 +33,51 @@ document.addEventListener('click', function(event) {
     if (!clickedElement.disabled) {
       console.log("Add to Cart button clicked and is enabled");
 
-      // Find the closest parent element that contains the price
-      const parentElement = clickedElement.closest('div[data-asin], div[data-index]');
-      if (parentElement) {
-        const priceSelectors = [
-          '#priceblock_ourprice',
-          '#priceblock_dealprice',
-          '#priceblock_saleprice',
-          '.priceBlockBuyingPriceString',
-          '.a-price .a-offscreen',
-          '.a-price-whole'
-        ];
+      // Handle different sites
+      let price = null;
+      let roundedPrice = null;
+      let investmentAmount = null;
 
-        let price = null;
-        for (let selector of priceSelectors) {
-          const priceElement = parentElement.querySelector(selector);
-          if (priceElement) {
-            const priceText = priceElement.textContent.trim();
-            price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-            if (!isNaN(price)) {
-              break;
+      if (window.location.hostname.includes("amazon")) {
+        const parentElement = clickedElement.closest('div[data-asin], div[data-index]');
+        if (parentElement) {
+          const priceSelectors = [
+            '#priceblock_ourprice',
+            '#priceblock_dealprice',
+            '#priceblock_saleprice',
+            '.priceBlockBuyingPriceString',
+            '.a-price .a-offscreen',
+            '.a-price-whole'
+          ];
+
+          for (let selector of priceSelectors) {
+            const priceElement = parentElement.querySelector(selector);
+            if (priceElement) {
+              const priceText = priceElement.textContent.trim();
+              price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+              if (!isNaN(price)) {
+                break;
+              }
             }
           }
         }
-
-        if (price !== null) {
-          const roundedPrice = Math.ceil(price / 100) * 100;
-          const investmentAmount = roundedPrice - price;
-          console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
-          chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
-            console.log("Message response:", response);
-          });
-        } else {
-          console.log("Price element not found or failed to parse price");
+      } else if (window.location.hostname.includes("trendyol")) {
+        const priceElement = document.querySelector('.prc-dsc');
+        if (priceElement) {
+          const priceText = priceElement.textContent.trim();
+          price = parseFloat(priceText.replace(/[^\d.]/g, ''));
         }
+      }
+
+      if (price !== null) {
+        roundedPrice = Math.ceil(price / 100) * 100;
+        investmentAmount = roundedPrice - price;
+        console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+        chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
+          console.log("Message response:", response);
+        });
       } else {
-        console.log("Parent element containing price not found");
+        console.log("Price element not found or failed to parse price");
       }
     } else {
       console.log("Add to Cart button clicked but is disabled");
@@ -84,44 +94,53 @@ function observeButtonState(button) {
       if (mutation.attributeName === 'disabled' && !button.disabled) {
         console.log("Add to Cart button is now enabled");
 
-        // Find the closest parent element that contains the price
-        const parentElement = button.closest('div[data-asin], div[data-index]');
-        if (parentElement) {
-          const priceSelectors = [
-            '#priceblock_ourprice',
-            '#priceblock_dealprice',
-            '#priceblock_saleprice',
-            '.priceBlockBuyingPriceString',
-            '.a-price .a-offscreen',
-            '.a-price-whole'
-          ];
+        // Handle different sites
+        let price = null;
+        let roundedPrice = null;
+        let investmentAmount = null;
 
-          let price = null;
-          for (let selector of priceSelectors) {
-            const priceElement = parentElement.querySelector(selector);
-            if (priceElement) {
-              const priceText = priceElement.textContent.trim();
-              price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-              if (!isNaN(price)) {
-                break;
+        if (window.location.hostname.includes("amazon")) {
+          const parentElement = button.closest('div[data-asin], div[data-index]');
+          if (parentElement) {
+            const priceSelectors = [
+              '#priceblock_ourprice',
+              '#priceblock_dealprice',
+              '#priceblock_saleprice',
+              '.priceBlockBuyingPriceString',
+              '.a-price .a-offscreen',
+              '.a-price-whole'
+            ];
+
+            for (let selector of priceSelectors) {
+              const priceElement = parentElement.querySelector(selector);
+              if (priceElement) {
+                const priceText = priceElement.textContent.trim();
+                price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+                if (!isNaN(price)) {
+                  break;
+                }
               }
             }
           }
-
-          if (price !== null) {
-            const roundedPrice = Math.ceil(price / 100) * 100;
-            const investmentAmount = roundedPrice - price;
-            console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
-            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
-              console.log("Message response:", response);
-            });
-          } else {
-            console.log("Price element not found or failed to parse price");
+        } else if (window.location.hostname.includes("trendyol")) {
+          const priceElement = document.querySelector('.prc-dsc');
+          if (priceElement) {
+            const priceText = priceElement.textContent.trim();
+            price = parseFloat(priceText.replace(/[^\d.]/g, ''));
           }
-          observer.disconnect();
-        } else {
-          console.log("Parent element containing price not found");
         }
+
+        if (price !== null) {
+          roundedPrice = Math.ceil(price / 100) * 100;
+          investmentAmount = roundedPrice - price;
+          console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+          chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
+            console.log("Message response:", response);
+          });
+        } else {
+          console.log("Price element not found or failed to parse price");
+        }
+        observer.disconnect();
       }
     });
   });

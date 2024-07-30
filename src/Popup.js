@@ -8,9 +8,8 @@ const Popup = ({ show, onClose, price, roundedPrice, investmentAmount }) => {
     setShowSecondPopup(true);
   };
 
-  const handleSecondPopupClose = () => {
-    setShowSecondPopup(false);
-    onClose();
+  const handleProceedClick = () => {
+    window.open('https://www.getmidas.com', '_blank'); // Replace with the actual URL
   };
 
   if (!show) {
@@ -18,29 +17,26 @@ const Popup = ({ show, onClose, price, roundedPrice, investmentAmount }) => {
   }
 
   return (
-    <div>
-      {!showSecondPopup ? (
-        <div className="popup">
-          <div className="popup-content">
-            <span className="close" onClick={onClose}>&times;</span>
-            <p>The item costs ${price.toFixed(2)}. Do you want to round it up to ${roundedPrice.toFixed(2)} and invest the difference of ${investmentAmount.toFixed(2)}?</p>
-            <button id="invest-button" onClick={handleInvestClick}>Invest</button>
-            <button id="no-button" onClick={onClose}>No</button>
-          </div>
+    <>
+      <div className="popup">
+        <div className="popup-content">
+          <span className="close" onClick={onClose}>&times;</span>
+          <p>The item costs ${price.toFixed(2)}. Do you want to round it up to ${roundedPrice.toFixed(2)} and invest the difference of ${investmentAmount.toFixed(2)}?</p>
+          <button id="invest-button" onClick={handleInvestClick}>Invest</button>
+          <button id="no-button" onClick={onClose}>No</button>
         </div>
-      ) : (
+      </div>
+      {showSecondPopup && (
         <div className="popup">
           <div className="popup-content">
-            <span className="close" onClick={handleSecondPopupClose}>&times;</span>
-            <p>Do you want to buy an Apple stock with the rounded amount of ${investmentAmount.toFixed(2)}?</p>
-            <p>Current Apple stock price: $150.00</p> {/* Replace with actual stock price */}
-            <p>You can buy approximately {(investmentAmount / 150).toFixed(3)} shares of Apple stock.</p>
-            <button id="confirm-invest-button" onClick={() => window.open('https://www.getmidas.com', '_blank')}>Confirm</button>
-            <button id="cancel-invest-button" onClick={handleSecondPopupClose}>Cancel</button>
+            <span className="close" onClick={() => setShowSecondPopup(false)}>&times;</span>
+            <p>You are about to invest ${investmentAmount.toFixed(2)}. Do you want to proceed?</p>
+            <button id="proceed-button" onClick={handleProceedClick}>Proceed</button>
+            <button id="cancel-button" onClick={() => setShowSecondPopup(false)}>Cancel</button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
