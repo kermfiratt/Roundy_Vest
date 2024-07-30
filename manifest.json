@@ -10,15 +10,14 @@
   ],
   "host_permissions": [
     "https://www.amazon.com/*",
-    "https://www.amazon.com.tr/*",
-    "https://www.ebay.com/*"
+    "https://www.amazon.com.tr/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.amazon.com/*", "https://www.amazon.com.tr/*", "https://www.ebay.com/*"],
+      "matches": ["https://www.amazon.com/*", "https://www.amazon.com.tr/*"],
       "js": ["content.js"],
       "css": ["src/Popup.css"]
     }

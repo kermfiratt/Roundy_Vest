@@ -27,14 +27,48 @@ document.addEventListener('click', function(event) {
   console.log("Clicked element:", clickedElement);
 
   const isAddToCartButton = addToCartSelectors.some(selector => clickedElement.matches(selector));
-  
+
   if (isAddToCartButton) {
     if (!clickedElement.disabled) {
       console.log("Add to Cart button clicked and is enabled");
-      chrome.runtime.sendMessage({ action: 'displayPopup' }, function(response) {
-        console.log("Message response:", response);
-      });
-      console.log("Message sent: displayPopup");
+
+      // Find the closest parent element that contains the price
+      const parentElement = clickedElement.closest('div[data-asin], div[data-index]');
+      if (parentElement) {
+        const priceSelectors = [
+          '#priceblock_ourprice',
+          '#priceblock_dealprice',
+          '#priceblock_saleprice',
+          '.priceBlockBuyingPriceString',
+          '.a-price .a-offscreen',
+          '.a-price-whole'
+        ];
+
+        let price = null;
+        for (let selector of priceSelectors) {
+          const priceElement = parentElement.querySelector(selector);
+          if (priceElement) {
+            const priceText = priceElement.textContent.trim();
+            price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+            if (!isNaN(price)) {
+              break;
+            }
+          }
+        }
+
+        if (price !== null) {
+          const roundedPrice = Math.ceil(price / 100) * 100;
+          const investmentAmount = roundedPrice - price;
+          console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+          chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
+            console.log("Message response:", response);
+          });
+        } else {
+          console.log("Price element not found or failed to parse price");
+        }
+      } else {
+        console.log("Parent element containing price not found");
+      }
     } else {
       console.log("Add to Cart button clicked but is disabled");
       observeButtonState(clickedElement);
@@ -49,11 +83,45 @@ function observeButtonState(button) {
     mutations.forEach((mutation) => {
       if (mutation.attributeName === 'disabled' && !button.disabled) {
         console.log("Add to Cart button is now enabled");
-        chrome.runtime.sendMessage({ action: 'displayPopup' }, function(response) {
-          console.log("Message response:", response);
-        });
-        console.log("Message sent: displayPopup");
-        observer.disconnect();
+
+        // Find the closest parent element that contains the price
+        const parentElement = button.closest('div[data-asin], div[data-index]');
+        if (parentElement) {
+          const priceSelectors = [
+            '#priceblock_ourprice',
+            '#priceblock_dealprice',
+            '#priceblock_saleprice',
+            '.priceBlockBuyingPriceString',
+            '.a-price .a-offscreen',
+            '.a-price-whole'
+          ];
+
+          let price = null;
+          for (let selector of priceSelectors) {
+            const priceElement = parentElement.querySelector(selector);
+            if (priceElement) {
+              const priceText = priceElement.textContent.trim();
+              price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+              if (!isNaN(price)) {
+                break;
+              }
+            }
+          }
+
+          if (price !== null) {
+            const roundedPrice = Math.ceil(price / 100) * 100;
+            const investmentAmount = roundedPrice - price;
+            console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
+              console.log("Message response:", response);
+            });
+          } else {
+            console.log("Price element not found or failed to parse price");
+          }
+          observer.disconnect();
+        } else {
+          console.log("Parent element containing price not found");
+        }
       }
     });
   });
@@ -64,23 +132,34 @@ function observeButtonState(button) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received in content script:", message);
   if (message.action === 'displayPopup') {
-    const popupHTML = `
-      <div class="popup">
-        <div class="popup-content">
-          <span class="close">&times;</span>
-          <p>Do you want to round the cost and invest?</p>
-          <button id="invest-button">Invest</button>
+    const { price, roundedPrice, investmentAmount } = message;
+    if (price !== undefined && roundedPrice !== undefined && investmentAmount !== undefined) {
+      const popupHTML = `
+        <div class="popup">
+          <div class="popup-content">
+            <button class="close">&times;</button>
+            <p>The item costs $${price.toFixed(2)}. Do you want to round it up to $${roundedPrice.toFixed(2)} and invest the difference of $${investmentAmount.toFixed(2)}?</p>
+            <button id="invest-button">Invest</button>
+            <button id="no-button">No</button>
+          </div>
         </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', popupHTML);
-    document.querySelector('.close').addEventListener('click', () => {
-      document.querySelector('.popup').remove();
-    });
-    document.querySelector('#invest-button').addEventListener('click', () => {
-      alert('Invest button clicked');
-      document.querySelector('.popup').remove();
-    });
-    sendResponse({ status: "Popup displayed" });
+      `;
+      document.body.insertAdjacentHTML('beforeend', popupHTML);
+      document.querySelector('.close').addEventListener('click', () => {
+        document.querySelector('.popup').remove();
+      });
+      document.querySelector('#invest-button').addEventListener('click', () => {
+        chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, function(response) {
+          console.log("Invest page response:", response);
+        });
+        document.querySelector('.popup').remove();
+      });
+      document.querySelector('#no-button').addEventListener('click', () => {
+        document.querySelector('.popup').remove();
+      });
+      sendResponse({ status: "Popup displayed" });
+    } else {
+      console.error('Price information is missing.');
+    }
   }
 });

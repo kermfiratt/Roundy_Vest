@@ -25,7 +25,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './popup.html',  // Updated path
+      template: './popup.html',  // Ensure this path is correct
       filename: 'popup.html',  // This will be generated in the dist folder
     }),
   ],
