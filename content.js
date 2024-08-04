@@ -33,51 +33,59 @@ document.addEventListener('click', function(event) {
     if (!clickedElement.disabled) {
       console.log("Add to Cart button clicked and is enabled");
 
-      // Handle different sites
-      let price = null;
-      let roundedPrice = null;
-      let investmentAmount = null;
+      // Find the closest parent element that contains the price
+      const parentElement = clickedElement.closest('div[data-asin], div[data-index], div.pdpContext');
+      if (parentElement) {
+        const priceSelectors = [
+          '#priceblock_ourprice',
+          '#priceblock_dealprice',
+          '#priceblock_saleprice',
+          '.priceBlockBuyingPriceString',
+          '.a-price .a-offscreen',
+          '.a-price-whole',
+          '.prc-dsc' // Trendyol price
+        ];
 
-      if (window.location.hostname.includes("amazon")) {
-        const parentElement = clickedElement.closest('div[data-asin], div[data-index]');
-        if (parentElement) {
-          const priceSelectors = [
-            '#priceblock_ourprice',
-            '#priceblock_dealprice',
-            '#priceblock_saleprice',
-            '.priceBlockBuyingPriceString',
-            '.a-price .a-offscreen',
-            '.a-price-whole'
-          ];
-
-          for (let selector of priceSelectors) {
-            const priceElement = parentElement.querySelector(selector);
-            if (priceElement) {
-              const priceText = priceElement.textContent.trim();
-              price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-              if (!isNaN(price)) {
-                break;
-              }
+        let price = null;
+        for (let selector of priceSelectors) {
+          const priceElement = parentElement.querySelector(selector);
+          if (priceElement) {
+            const priceText = priceElement.textContent.trim();
+            price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+            if (!isNaN(price)) {
+              break;
             }
           }
         }
-      } else if (window.location.hostname.includes("trendyol")) {
-        const priceElement = document.querySelector('.prc-dsc');
-        if (priceElement) {
-          const priceText = priceElement.textContent.trim();
-          price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-        }
-      }
 
-      if (price !== null) {
-        roundedPrice = Math.ceil(price / 100) * 100;
-        investmentAmount = roundedPrice - price;
-        console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
-        chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
-          console.log("Message response:", response);
-        });
+        if (price !== null) {
+          const roundedPrice = Math.ceil(price / 100) * 100;
+          const investmentAmount = roundedPrice - price;
+          console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+
+          // Detect category
+          let category = 'general';
+          const url = window.location.href.toLowerCase();
+          const textContent = parentElement.textContent.toLowerCase();
+
+          if (url.includes('shoe') || url.includes('sneaker') || url.includes('boot') || textContent.includes('shoe') || textContent.includes('sneaker') || textContent.includes('boot')) {
+            category = 'shoes';
+          } else if (url.includes('clothing') || url.includes('apparel') || url.includes('shirt') || textContent.includes('clothing') || textContent.includes('apparel') || textContent.includes('shirt')) {
+            category = 'clothing';
+          } else if (url.includes('keyboard') || url.includes('mouse') || url.includes('computer') || url.includes('tablet') || url.includes('phone') || url.includes('printer') || textContent.includes('keyboard') || textContent.includes('mouse') || textContent.includes('computer') || textContent.includes('tablet') || textContent.includes('phone') || textContent.includes('printer')) {
+            category = 'electronics';
+          } else if (url.includes('cosmetic') || url.includes('beauty') || textContent.includes('cosmetic') || textContent.includes('beauty')) {
+            category = 'cosmetics';
+          }
+
+          chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount, category }, function(response) {
+            console.log("Message response:", response);
+          });
+        } else {
+          console.log("Price element not found or failed to parse price");
+        }
       } else {
-        console.log("Price element not found or failed to parse price");
+        console.log("Parent element containing price not found");
       }
     } else {
       console.log("Add to Cart button clicked but is disabled");
@@ -94,53 +102,61 @@ function observeButtonState(button) {
       if (mutation.attributeName === 'disabled' && !button.disabled) {
         console.log("Add to Cart button is now enabled");
 
-        // Handle different sites
-        let price = null;
-        let roundedPrice = null;
-        let investmentAmount = null;
+        // Find the closest parent element that contains the price
+        const parentElement = button.closest('div[data-asin], div[data-index], div.pdpContext');
+        if (parentElement) {
+          const priceSelectors = [
+            '#priceblock_ourprice',
+            '#priceblock_dealprice',
+            '#priceblock_saleprice',
+            '.priceBlockBuyingPriceString',
+            '.a-price .a-offscreen',
+            '.a-price-whole',
+            '.prc-dsc' // Trendyol price
+          ];
 
-        if (window.location.hostname.includes("amazon")) {
-          const parentElement = button.closest('div[data-asin], div[data-index]');
-          if (parentElement) {
-            const priceSelectors = [
-              '#priceblock_ourprice',
-              '#priceblock_dealprice',
-              '#priceblock_saleprice',
-              '.priceBlockBuyingPriceString',
-              '.a-price .a-offscreen',
-              '.a-price-whole'
-            ];
-
-            for (let selector of priceSelectors) {
-              const priceElement = parentElement.querySelector(selector);
-              if (priceElement) {
-                const priceText = priceElement.textContent.trim();
-                price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-                if (!isNaN(price)) {
-                  break;
-                }
+          let price = null;
+          for (let selector of priceSelectors) {
+            const priceElement = parentElement.querySelector(selector);
+            if (priceElement) {
+              const priceText = priceElement.textContent.trim();
+              price = parseFloat(priceText.replace(/[^\d.]/g, ''));
+              if (!isNaN(price)) {
+                break;
               }
             }
           }
-        } else if (window.location.hostname.includes("trendyol")) {
-          const priceElement = document.querySelector('.prc-dsc');
-          if (priceElement) {
-            const priceText = priceElement.textContent.trim();
-            price = parseFloat(priceText.replace(/[^\d.]/g, ''));
-          }
-        }
 
-        if (price !== null) {
-          roundedPrice = Math.ceil(price / 100) * 100;
-          investmentAmount = roundedPrice - price;
-          console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
-          chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
-            console.log("Message response:", response);
-          });
+          if (price !== null) {
+            const roundedPrice = Math.ceil(price / 100) * 100;
+            const investmentAmount = roundedPrice - price;
+            console.log(`Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
+
+            // Detect category
+            let category = 'general';
+            const url = window.location.href.toLowerCase();
+            const textContent = parentElement.textContent.toLowerCase();
+
+            if (url.includes('shoe') || url.includes('sneaker') || url.includes('boot') || textContent.includes('shoe') || textContent.includes('sneaker') || textContent.includes('boot')) {
+              category = 'shoes';
+            } else if (url.includes('clothing') || url.includes('apparel') || url.includes('shirt') || textContent.includes('clothing') || textContent.includes('apparel') || textContent.includes('shirt')) {
+              category = 'clothing';
+            } else if (url.includes('keyboard') || url.includes('mouse') || url.includes('computer') || url.includes('tablet') || url.includes('phone') || url.includes('printer') || textContent.includes('keyboard') || textContent.includes('mouse') || textContent.includes('computer') || textContent.includes('tablet') || textContent.includes('phone') || textContent.includes('printer')) {
+              category = 'electronics';
+            } else if (url.includes('cosmetic') || url.includes('beauty') || textContent.includes('cosmetic') || textContent.includes('beauty')) {
+              category = 'cosmetics';
+            }
+
+            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount, category }, function(response) {
+              console.log("Message response:", response);
+            });
+          } else {
+            console.log("Price element not found or failed to parse price");
+          }
+          observer.disconnect();
         } else {
-          console.log("Price element not found or failed to parse price");
+          console.log("Parent element containing price not found");
         }
-        observer.disconnect();
       }
     });
   });
@@ -151,7 +167,7 @@ function observeButtonState(button) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received in content script:", message);
   if (message.action === 'displayPopup') {
-    const { price, roundedPrice, investmentAmount } = message;
+    const { price, roundedPrice, investmentAmount, category } = message;
     if (price !== undefined && roundedPrice !== undefined && investmentAmount !== undefined) {
       const popupHTML = `
         <div class="popup">
@@ -168,7 +184,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         document.querySelector('.popup').remove();
       });
       document.querySelector('#invest-button').addEventListener('click', () => {
-        chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, function(response) {
+        chrome.runtime.sendMessage({ action: 'showInvestPage', category, investmentAmount }, function(response) {
           console.log("Invest page response:", response);
         });
         document.querySelector('.popup').remove();
