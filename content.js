@@ -1,5 +1,26 @@
 console.log("Content script loaded");
 
+let lastPopupData = null;
+
+// Check for specific URL pattern
+function checkURLForRefresh() {
+  if (window.location.href.includes("sw_refresh")) {
+    console.log("URL includes sw_refresh, displaying popup");
+    chrome.storage.local.get(['lastPopupData'], function(result) {
+      if (result.lastPopupData) {
+        chrome.runtime.sendMessage({ action: 'displayPopup', ...result.lastPopupData }, function(response) {
+          console.log("Displayed popup after navigation");
+        });
+      } else {
+        console.log("No popup data available to display after navigation");
+      }
+    });
+  }
+}
+
+checkURLForRefresh();
+
+// Event listener for the "Add to Cart" button
 document.addEventListener('click', function(event) {
   console.log("Document clicked", event.target);
 
@@ -19,9 +40,6 @@ document.addEventListener('click', function(event) {
     'input#add-to-cart-button-ubb', // Turkish add to cart button
     'button[name="submit.add-to-cart-ubb"]', // Turkish add to cart button
     'button#add-to-cart-button-ubb', // Turkish add to cart button
-    'input[value="Sepete Ekle"]', // Turkish add to cart button
-    'button[value="Sepete Ekle"]', // Turkish add to cart button
-    '.add-to-basket-button-text' // Trendyol add to cart button
   ];
 
   const clickedElement = event.target;
@@ -78,6 +96,12 @@ document.addEventListener('click', function(event) {
             category = 'cosmetics';
           }
 
+          lastPopupData = { price, roundedPrice, investmentAmount, category };
+
+          chrome.storage.local.set({ lastPopupData }, function() {
+            console.log('Popup data saved to local storage');
+          });
+
           chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount, category }, function(response) {
             console.log("Message response:", response);
           });
@@ -95,6 +119,7 @@ document.addEventListener('click', function(event) {
     console.log("Clicked element is not an Add to Cart button");
   }
 });
+
 
 function observeButtonState(button) {
   const observer = new MutationObserver((mutations) => {
@@ -147,6 +172,12 @@ function observeButtonState(button) {
               category = 'cosmetics';
             }
 
+            lastPopupData = { price, roundedPrice, investmentAmount, category };
+
+            chrome.storage.local.set({ lastPopupData }, function() {
+              console.log('Popup data saved to local storage');
+            });
+
             chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount, category }, function(response) {
               console.log("Message response:", response);
             });
@@ -168,6 +199,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received in content script:", message);
   if (message.action === 'displayPopup') {
     const { price, roundedPrice, investmentAmount, category } = message;
+    lastPopupData = { price, roundedPrice, investmentAmount, category };
     if (price !== undefined && roundedPrice !== undefined && investmentAmount !== undefined) {
       const popupHTML = `
         <div class="popup">
@@ -196,5 +228,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else {
       console.error('Price information is missing.');
     }
+  }
+});
+
+chrome.storage.local.get(['lastPopupData'], function(result) {
+  if (result.lastPopupData) {
+    lastPopupData = result.lastPopupData;
+    console.log('Restored popup data from local storage');
   }
 });
