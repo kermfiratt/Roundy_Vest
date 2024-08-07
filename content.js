@@ -4,10 +4,14 @@ let lastTotalPrice = null;
 
 // Check for specific URL patterns
 function checkURLForActions() {
-  if (window.location.href.includes("nav_cart")) {
-    console.log("URL includes nav_cart, fetching subtotal price");
-    fetchSubtotalPrice();
-  } else if (window.location.href.includes("from=cheetah")) {
+  if (window.location.href.includes("nav_cart") || window.location.href.includes("sepet")) {
+    console.log("URL includes nav_cart or sepet, fetching subtotal price");
+    if (window.location.href.includes("amazon")) {
+      fetchSubtotalPriceAmazon();
+    } else if (window.location.href.includes("trendyol")) {
+      fetchSubtotalPriceTrendyol();
+    }
+  } else if (window.location.href.includes("from=cheetah") || window.location.href.includes("isProceedPayment=true") || window.location.href.includes("odeme")) {
     console.log("URL includes from=cheetah, displaying popup");
     displayPopupWithSavedPrice();
   }
@@ -15,21 +19,42 @@ function checkURLForActions() {
 
 checkURLForActions();
 
-function fetchSubtotalPrice() {
+// Function to fetch subtotal price from Amazon
+function fetchSubtotalPriceAmazon() {
   const subtotalElement = document.querySelector('#sc-subtotal-amount-activecart span, #sc-subtotal-amount-buybox span');
   if (subtotalElement) {
     const subtotalText = subtotalElement.textContent.trim();
-    const subtotal = parseFloat(subtotalText.replace(/[^\d.]/g, ''));
+    const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace(/,/g, '').replace(/\./g, ''));
+    const convertedSubtotal = subtotal / 100;
+    if (!isNaN(convertedSubtotal)) {
+      lastTotalPrice = convertedSubtotal;
+      chrome.storage.local.set({ lastTotalPrice }, function() {
+        console.log(`Subtotal price saved: ${convertedSubtotal}`);
+      });
+    } else {
+      console.log("Failed to parse subtotal price on Amazon");
+    }
+  } else {
+    console.log("Subtotal price element not found on Amazon");
+  }
+}
+
+// Function to fetch subtotal price from Trendyol
+function fetchSubtotalPriceTrendyol() {
+  const subtotalElement = document.querySelector('.basket-summary .total .total-price');
+  if (subtotalElement) {
+    const subtotalText = subtotalElement.textContent.trim();
+    const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.'));
     if (!isNaN(subtotal)) {
       lastTotalPrice = subtotal;
       chrome.storage.local.set({ lastTotalPrice }, function() {
         console.log(`Subtotal price saved: ${subtotal}`);
       });
     } else {
-      console.log("Failed to parse subtotal price");
+      console.log("Failed to parse subtotal price for Trendyol");
     }
   } else {
-    console.log("Subtotal price element not found");
+    console.log("Subtotal price element not found on Trendyol");
   }
 }
 
@@ -45,8 +70,10 @@ function displayPopupWithSavedPrice() {
         roundedPrice = 150;
       } else if (price >= 500 && price < 1000) {
         roundedPrice = 750;
-      } else if (price >= 1000) {
+      } else if (price >= 1000 && price < 2000) {
         roundedPrice = 1250;
+      } else if (price >= 2000) {
+        roundedPrice = Math.ceil(price / 1000) * 1000;
       }
 
       const investmentAmount = roundedPrice - price;
