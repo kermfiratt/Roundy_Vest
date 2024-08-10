@@ -4,16 +4,21 @@ let lastTotalPrice = null;
 
 // Check for specific URL patterns
 function checkURLForActions() {
-  if (window.location.href.includes("nav_cart") || window.location.href.includes("sepet")) {
-    console.log("URL includes nav_cart or sepet, fetching subtotal price");
-    if (window.location.href.includes("amazon")) {
+  const url = window.location.href;
+  if (url.includes("nav_cart") || url.includes("sepet") || url.includes("sepetim")) {
+    console.log("URL includes nav_cart or sepet or sepetim, fetching subtotal price");
+    if (url.includes("amazon")) {
       fetchSubtotalPriceAmazon();
-    } else if (window.location.href.includes("trendyol")) {
+    } else if (url.includes("trendyol")) {
       fetchSubtotalPriceTrendyol();
+    } else if (url.includes("hepsiburada")) {
+      fetchSubtotalPriceHepsiburada();
     }
-  } else if (window.location.href.includes("from=cheetah") || window.location.href.includes("isProceedPayment=true") || window.location.href.includes("odeme")) {
-    console.log("URL includes from=cheetah, displaying popup");
+  } else if (url.includes("from=cheetah") || url.includes("isProceedPayment=true") || url.includes("odeme")) {
+    console.log("URL includes from=cheetah or odeme, displaying popup");
     displayPopupWithSavedPrice();
+  } else {
+    console.log("URL does not match any pattern: ", url);
   }
 }
 
@@ -21,6 +26,7 @@ checkURLForActions();
 
 // Function to fetch subtotal price from Amazon
 function fetchSubtotalPriceAmazon() {
+  console.log("Fetching subtotal price from Amazon");
   const subtotalElement = document.querySelector('#sc-subtotal-amount-activecart span, #sc-subtotal-amount-buybox span');
   if (subtotalElement) {
     const subtotalText = subtotalElement.textContent.trim();
@@ -41,9 +47,11 @@ function fetchSubtotalPriceAmazon() {
 
 // Function to fetch subtotal price from Trendyol
 function fetchSubtotalPriceTrendyol() {
-  const subtotalElement = document.querySelector('.basket-summary .total .total-price');
+  console.log("Fetching subtotal price from Trendyol");
+  const subtotalElement = document.querySelector('.pb-summary-total-price.discount-active');
   if (subtotalElement) {
-    const subtotalText = subtotalElement.textContent.trim();
+    const subtotalText = subtotalElement.textContent.trim().split(' ')[0];
+    console.log("Trendyol subtotal text:", subtotalText);
     const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.'));
     if (!isNaN(subtotal)) {
       lastTotalPrice = subtotal;
@@ -58,6 +66,27 @@ function fetchSubtotalPriceTrendyol() {
   }
 }
 
+// Function to fetch subtotal price from Hepsiburada
+function fetchSubtotalPriceHepsiburada() {
+  console.log("Fetching subtotal price from Hepsiburada");
+  const subtotalElement = document.querySelector('#basket_payedPrice .currency_3gyoe');
+  if (subtotalElement) {
+    const subtotalText = subtotalElement.textContent.trim();
+    console.log("Hepsiburada subtotal text:", subtotalText);
+    const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.'));
+    if (!isNaN(subtotal)) {
+      lastTotalPrice = subtotal;
+      chrome.storage.local.set({ lastTotalPrice }, function() {
+        console.log(`Subtotal price saved: ${subtotal}`);
+      });
+    } else {
+      console.log("Failed to parse subtotal price for Hepsiburada");
+    }
+  } else {
+    console.log("Subtotal price element not found on Hepsiburada");
+  }
+}
+
 function displayPopupWithSavedPrice() {
   chrome.storage.local.get(['lastTotalPrice'], function(result) {
     if (result.lastTotalPrice) {
@@ -66,12 +95,22 @@ function displayPopupWithSavedPrice() {
 
       if (price <= 50) {
         roundedPrice = 100;
-      } else if (price >= 75 && price < 500) {
+      } else if (price >= 75 && price < 149) {
         roundedPrice = 150;
-      } else if (price >= 500 && price < 1000) {
+      } else if (price >= 150 && price < 249) {
+        roundedPrice = 250;
+      } else if (price >= 249 && price < 349) {
+        roundedPrice = 350;
+      } else if (price >= 350 && price < 499) {
+        roundedPrice = 500;
+      } else if (price >= 500 && price < 749) {
         roundedPrice = 750;
-      } else if (price >= 1000 && price < 2000) {
-        roundedPrice = 1250;
+      } else if (price >= 750 && price < 999) {
+        roundedPrice = 1000;
+      } else if (price >= 1000 && price < 1499) {
+        roundedPrice = 1500;
+      } else if (price >= 1500 && price < 1999) {
+        roundedPrice = 2000;
       } else if (price >= 2000) {
         roundedPrice = Math.ceil(price / 1000) * 1000;
       }
