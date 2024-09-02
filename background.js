@@ -12,9 +12,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'showInvestPage') {
     let url = 'https://robinhood.com/us/en/invest/';
     
-    //    if (message.investmentAmount) {
-     //   url += `/invest?amount=${message.investmentAmount}`;   (TO ADD THE AMOUNT TO URL IN THE FUTURE)
-    //    }
+       //    if (message.investmentAmount) {
+      //   url += `/invest?amount=${message.investmentAmount}`;   (TO ADD THE AMOUNT TO URL IN THE FUTURE)
+     //    }
+
     console.log('Opening investment page:', url);
     chrome.tabs.create({ url: url });
     sendResponse({ status: 'Investment page opened' });
@@ -31,3 +32,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Indicate that we will respond asynchronously
   }
 });
+
+

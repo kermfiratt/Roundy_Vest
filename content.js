@@ -167,3 +167,5 @@ chrome.storage.local.get(['lastTotalPrice'], function(result) {
     console.log('Restored last total price from local storage');
   }
 });
+
+
