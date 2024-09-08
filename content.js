@@ -5,7 +5,7 @@ let lastTotalPrice = null;
 // Check for specific URL patterns
 function checkURLForActions() {
     if (window.location.href.includes("nav_cart") || window.location.href.includes("sepet") || window.location.href.includes("sepetim")) {
-        console.log("URL includes nav_cart or sepet or sepetim, fetching subtotal price");
+        console.log("URL includes nav_cart or sepet, fetching subtotal price");
         if (window.location.href.includes("amazon")) {
             fetchSubtotalPriceAmazon();
         } else if (window.location.href.includes("trendyol")) {
@@ -30,7 +30,7 @@ function fetchSubtotalPriceAmazon() {
         const convertedSubtotal = subtotal / 100;
         if (!isNaN(convertedSubtotal)) {
             lastTotalPrice = convertedSubtotal;
-            chrome.storage.local.set({ lastTotalPrice }, function() {
+            chrome.storage.local.set({ lastTotalPrice }, () => {
                 console.log(`Subtotal price saved: ${convertedSubtotal}`);
             });
         } else {
@@ -41,125 +41,41 @@ function fetchSubtotalPriceAmazon() {
     }
 }
 
-// Function to show the loading animation
-function showLoadingAnimation() {
-    const loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'loading-overlay';
-    loadingOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.8);
-        z-index: 10000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    `;
-
-    const spinner = document.createElement('div');
-    spinner.className = 'spinner';
-    spinner.style.cssText = `
-        border: 8px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 8px solid #3498db;
-        width: 60px;
-        height: 60px;
-        -webkit-animation: spin 2s linear infinite;
-        animation: spin 2s linear infinite;
-    `;
-
-    loadingOverlay.appendChild(spinner);
-    document.body.appendChild(loadingOverlay);
-}
-
-// Function to hide the loading animation
-function hideLoadingAnimation() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) {
-        document.body.removeChild(loadingOverlay);
-    }
-}
-
-// CSS for spinner animation (to be included directly in the content.js)
-const style = document.createElement('style');
-style.innerHTML = `
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-`;
-document.head.appendChild(style);
-
-// Function to fetch subtotal price from Trendyol
-function fetchSubtotalPriceTrendyol() {
-    const subtotalElement = document.querySelector('.pb-summary-box-prices');
-    if (subtotalElement) {
-        const subtotalText = subtotalElement.textContent.trim().split(' ')[0];
-        const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.'));
-        if (!isNaN(subtotal)) {
-            lastTotalPrice = subtotal;
-            chrome.storage.local.set({ lastTotalPrice }, function() {
-                console.log(`Subtotal price saved: ${subtotal}`);
-            });
-        } else {
-            console.log("Failed to parse subtotal price for Trendyol");
-        }
-    } else {
-        console.log("Subtotal price element not found on Trendyol");
-    }
-}
-
-// Function to fetch subtotal price from Hepsiburada
-function fetchSubtotalPriceHepsiburada() {
-    const subtotalElement = document.querySelector('.total_price_3V-CM');
-    if (subtotalElement) {
-        const subtotalText = subtotalElement.textContent.trim();
-        const subtotal = parseFloat(subtotalText.replace(/[^\d,]/g, '').replace('.', '').replace(',', '.'));
-        if (!isNaN(subtotal)) {
-            lastTotalPrice = subtotal;
-            chrome.storage.local.set({ lastTotalPrice }, function() {
-                console.log(`Subtotal price saved: ${subtotal}`);
-            });
-        } else {
-            console.log("Failed to parse subtotal price for Hepsiburada");
-        }
-    } else {
-        console.log("Subtotal price element not found on Hepsiburada");
-    }
-}
-
 // Function to display the popup with the saved price
 function displayPopupWithSavedPrice() {
-    chrome.storage.local.get(['lastTotalPrice'], function(result) {
+    chrome.storage.local.get(['lastTotalPrice'], (result) => {
         if (result.lastTotalPrice) {
             const price = result.lastTotalPrice;
-            let roundedPrice = 0;
-
-            if (price <= 50) {
-                roundedPrice = 100;
-            } else if (price >= 75 && price < 500) {
-                roundedPrice = 150;
-            } else if (price >= 500 && price < 1000) {
-                roundedPrice = 750;
-            } else if (price >= 1000 && price < 2000) {
-                roundedPrice = 1250;
-            } else if (price >= 2000) {
-                roundedPrice = Math.ceil(price / 1000) * 1000;
-            }
-
+            let roundedPrice = calculateRoundedPrice(price);
             const investmentAmount = roundedPrice - price;
+
             console.log(`Total Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
-            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
+
+            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, (response) => {
                 console.log("Displayed popup after navigation");
             });
         } else {
-            console.log("No saved total price available to display after navigation");
+            console.warn("No saved total price available to display after navigation");
         }
     });
 }
 
+// Helper function to calculate the rounded price
+function calculateRoundedPrice(price) {
+    if (price <= 50) {
+        return 100;
+    } else if (price >= 75 && price < 500) {
+        return 150;
+    } else if (price >= 500 && price < 1000) {
+        return 750;
+    } else if (price >= 1000 && price < 2000) {
+        return 1250;
+    } else if (price >= 2000) {
+        return Math.ceil(price / 1000) * 1000;
+    }
+}
+
+// Listener for messages to display the popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Message received in content script:", message);
     if (message.action === 'displayPopup') {
@@ -180,7 +96,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 document.querySelector('.popup').remove();
             });
             document.querySelector('#invest-button').addEventListener('click', () => {
-                chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, function(response) {
+                chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, (response) => {
                     console.log("Invest page response:", response);
                 });
                 document.querySelector('.popup').remove();
@@ -195,111 +111,215 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-chrome.storage.local.get(['lastTotalPrice'], function(result) {
+// Restore last saved total price from local storage
+chrome.storage.local.get(['lastTotalPrice'], (result) => {
     if (result.lastTotalPrice) {
         lastTotalPrice = result.lastTotalPrice;
-        console.log('Restored last total price from local storage');
+        console.log('Restored last total price from local storage:', lastTotalPrice);
     }
 });
 
-// Function to add the "Find the Best Deal" button
+// Function to add the "Find the Best Deal" button to the page
 function addFindBestDealButton() {
-    // Create the button element
-    const bestDealButton = document.createElement('button');
-    bestDealButton.innerText = 'Find the Best Deal';
-    bestDealButton.id = 'best-deal-button';
-    bestDealButton.style.cssText = `
-        background-color: #ffa500;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-        border-radius: 5px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    `;
+    if (!document.getElementById('best-deal-button')) {
+        const bestDealButton = document.createElement('button');
+        bestDealButton.innerText = 'Find the Best Deal';
+        bestDealButton.id = 'best-deal-button';
+        bestDealButton.style.cssText = `
+            background-color: #ffa500;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            border-radius: 5px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        `;
 
-    // Append the button to the body of the page
-    document.body.appendChild(bestDealButton);
+        document.body.appendChild(bestDealButton);
 
-    // Add an event listener to the button for clicks
-    bestDealButton.addEventListener('click', function() {
-        const productName = document.querySelector('#productTitle')?.innerText.trim();
-        console.log('Finding the best deal for:', productName);
-        showLoadingAnimation();  // Show the loading animation
-        searchForBestDeal(productName);
-    });
-}
-
-// Call the function to add the button
-addFindBestDealButton();
-
-// Function to search for the best deal
-async function searchForBestDeal(productName) {
-    try {
-        const response = await fetch(`http://localhost:3000/scrape?productName=${encodeURIComponent(productName)}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-
-        const bestDeal = await response.json();
-        hideLoadingAnimation();  // Hide the loading animation once the best deal is found
-
-        if (bestDeal) {
-            console.log(`Best deal found on ${bestDeal.site} for $${bestDeal.price}. Link: ${bestDeal.link}`);
-            displayBestDeal(bestDeal);
-        } else {
-            console.log('No deal found.');
-        }
-    } catch (error) {
-        hideLoadingAnimation();  // Hide the loading animation in case of error
-        console.error('Error finding the best deal:', error);
-        alert('An error occurred while searching for the best deal. Please try again later.');
+        // On click, search for the best deal
+        bestDealButton.addEventListener('click', () => {
+            const productName = document.querySelector('#productTitle')?.innerText.trim();
+            if (productName) {
+                console.log('Finding the best deal for:', productName);
+                showLoadingAnimation();  // Show loading animation
+                searchForBestDeal(productName); // Search for the best deal using backend server
+            } else {
+                console.warn('Product name not found.');
+            }
+        });
     }
 }
 
-// Function to display the best deal to the user
-function displayBestDeal(deal) {
-  const dealMessage = `
-      We found a better deal on ${deal.site} for ${deal.price}!
-      <a href="${deal.link}" target="_blank">Click here to buy</a>
-  `;
+// Function to search for the best deal by sending a request to the backend server
+function searchForBestDeal(productName) {
+    fetch(`http://localhost:3000/search?productName=${encodeURIComponent(productName)}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingAnimation();  // Hide loading animation when results are received
 
-  const dealPopup = document.createElement('div');
-  dealPopup.id = 'deal-popup';
-  dealPopup.style.cssText = `
-      background-color: #fff;
-      color: #000;
-      padding: 20px;
-      border-radius: 10px;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      z-index: 1001;
-  `;
-  dealPopup.innerHTML = dealMessage;
-
-  const closeButton = document.createElement('button');
-  closeButton.innerText = 'Close';
-  closeButton.style.cssText = `
-      display: block;
-      margin: 20px auto 0;
-      padding: 10px 20px;
-      background-color: #ffa500;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-  `;
-
-  closeButton.addEventListener('click', () => {
-      document.body.removeChild(dealPopup);
-  });
-
-  dealPopup.appendChild(closeButton);
-  document.body.appendChild(dealPopup);
+            if (data && data.length > 0) {
+                const deals = data.flatMap(site => site.deals);
+                if (deals.length > 0) {
+                    const bestDeal = deals.reduce((prev, current) => (prev.price < current.price) ? prev : current);
+                    displayBestDeal(bestDeal);
+                } else {
+                    displayNoBetterDeal();
+                }
+            } else {
+                displayNoBetterDeal();
+            }
+        })
+        .catch(error => {
+            hideLoadingAnimation();  // Hide loading animation on error
+            console.error('Error finding the best deal:', error);
+            alert('An error occurred while searching for the best deal. Please try again later.');
+        });
 }
+
+// Function to show loading animation
+function showLoadingAnimation() {
+    if (!document.getElementById('loading-overlay')) {
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'loading-overlay';
+        loadingOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
+
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner';
+        spinner.style.cssText = `
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #3498db;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        `;
+
+        loadingOverlay.appendChild(spinner);
+        document.body.appendChild(loadingOverlay);
+
+        // CSS for spinner animation
+        const style = document.createElement('style');
+        style.innerHTML = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Function to hide the loading animation
+function hideLoadingAnimation() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        document.body.removeChild(loadingOverlay);
+    }
+}
+
+// Function to display the best deal in a popup
+function displayBestDeal(deal) {
+    const dealMessage = `
+        We found a better deal on ${deal.site} for $${deal.price}!
+        <a href="${deal.itemUrl}" target="_blank">Click here to buy</a>
+    `;
+
+    const dealPopup = document.createElement('div');
+    dealPopup.id = 'deal-popup';
+    dealPopup.style.cssText = `
+        background-color: #fff;
+        color: #000;
+        padding: 20px;
+        border-radius: 10px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        z-index: 10001;
+    `;
+    dealPopup.innerHTML = dealMessage;
+
+    const closeButton = document.createElement('button');
+    closeButton.innerText = 'Close';
+    closeButton.style.cssText = `
+        display: block;
+        margin: 20px auto 0;
+        padding: 10px 20px;
+        background-color: #ffa500;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    `;
+
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(dealPopup);
+    });
+
+    dealPopup.appendChild(closeButton);
+    document.body.appendChild(dealPopup);
+}
+
+// Function to display a message when no better deal is found
+function displayNoBetterDeal() {
+    const message = `
+        <p>No better deal was found on eBay, Walmart, or Best Buy.</p>
+    `;
+
+    const popup = document.createElement('div');
+    popup.id = 'no-deal-popup';
+    popup.style.cssText = `
+        background-color: #fff;
+        color: #000;
+        padding: 20px;
+        border-radius: 10px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        z-index: 10001;
+    `;
+    popup.innerHTML = message;
+
+    const closeButton = document.createElement('button');
+    closeButton.innerText = 'Close';
+    closeButton.style.cssText = `
+        display: block;
+        margin: 20px auto 0;
+        padding: 10px 20px;
+        background-color: #ffa500;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    `;
+
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(popup);
+    });
+
+    popup.appendChild(closeButton);
+    document.body.appendChild(popup);
+}
+
+// Call function to add the "Find the Best Deal" button when page loads
+addFindBestDealButton();
