@@ -14,7 +14,6 @@
     "https://www.hepsiburada.com/*",
     "https://www.trendyol.com/*",
     "http://localhost:3000/*"
-    
   ],
   "background": {
     "service_worker": "background.js"
@@ -39,9 +38,7 @@
       "128": "images/logo.webp"
     }
   },
-
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self';"
   }
 }
-

@@ -2,10 +2,10 @@ console.log("Content script loaded");
 
 let lastTotalPrice = null;
 
-// Check for specific URL patterns
+// Check for specific URL patterns to decide actions
 function checkURLForActions() {
     if (window.location.href.includes("nav_cart") || window.location.href.includes("sepet") || window.location.href.includes("sepetim")) {
-        console.log("URL includes nav_cart or sepet, fetching subtotal price");
+        console.log("URL includes nav_cart or sepet or sepetim, fetching subtotal price");
         if (window.location.href.includes("amazon")) {
             fetchSubtotalPriceAmazon();
         } else if (window.location.href.includes("trendyol")) {
@@ -30,7 +30,7 @@ function fetchSubtotalPriceAmazon() {
         const convertedSubtotal = subtotal / 100;
         if (!isNaN(convertedSubtotal)) {
             lastTotalPrice = convertedSubtotal;
-            chrome.storage.local.set({ lastTotalPrice }, () => {
+            chrome.storage.local.set({ lastTotalPrice }, function() {
                 console.log(`Subtotal price saved: ${convertedSubtotal}`);
             });
         } else {
@@ -43,15 +43,29 @@ function fetchSubtotalPriceAmazon() {
 
 // Function to display the popup with the saved price
 function displayPopupWithSavedPrice() {
-    chrome.storage.local.get(['lastTotalPrice'], (result) => {
+    chrome.storage.local.get(['lastTotalPrice'], function(result) {
         if (result.lastTotalPrice) {
             const price = result.lastTotalPrice;
-            let roundedPrice = calculateRoundedPrice(price);
-            const investmentAmount = roundedPrice - price;
+            let roundedPrice = 0;
 
+            // Calculate rounded price based on thresholds
+            if (price <= 50) {
+                roundedPrice = 100;
+            } else if (price >= 75 && price < 500) {
+                roundedPrice = 150;
+            } else if (price >= 500 && price < 1000) {
+                roundedPrice = 750;
+            } else if (price >= 1000 && price < 2000) {
+                roundedPrice = 1250;
+            } else if (price >= 2000) {
+                roundedPrice = Math.ceil(price / 1000) * 1000;
+            }
+
+            const investmentAmount = roundedPrice - price;
             console.log(`Total Price: ${price}, Rounded Price: ${roundedPrice}, Investment Amount: ${investmentAmount}`);
 
-            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, (response) => {
+            // Display the popup
+            chrome.runtime.sendMessage({ action: 'displayPopup', price, roundedPrice, investmentAmount }, function(response) {
                 console.log("Displayed popup after navigation");
             });
         } else {
@@ -60,22 +74,7 @@ function displayPopupWithSavedPrice() {
     });
 }
 
-// Helper function to calculate the rounded price
-function calculateRoundedPrice(price) {
-    if (price <= 50) {
-        return 100;
-    } else if (price >= 75 && price < 500) {
-        return 150;
-    } else if (price >= 500 && price < 1000) {
-        return 750;
-    } else if (price >= 1000 && price < 2000) {
-        return 1250;
-    } else if (price >= 2000) {
-        return Math.ceil(price / 1000) * 1000;
-    }
-}
-
-// Listener for messages to display the popup
+// Listen for messages to display the popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Message received in content script:", message);
     if (message.action === 'displayPopup') {
@@ -96,7 +95,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 document.querySelector('.popup').remove();
             });
             document.querySelector('#invest-button').addEventListener('click', () => {
-                chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, (response) => {
+                chrome.runtime.sendMessage({ action: 'showInvestPage', investmentAmount }, function(response) {
                     console.log("Invest page response:", response);
                 });
                 document.querySelector('.popup').remove();
@@ -112,118 +111,104 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Restore last saved total price from local storage
-chrome.storage.local.get(['lastTotalPrice'], (result) => {
+chrome.storage.local.get(['lastTotalPrice'], function(result) {
     if (result.lastTotalPrice) {
         lastTotalPrice = result.lastTotalPrice;
         console.log('Restored last total price from local storage:', lastTotalPrice);
     }
 });
 
-// Function to add the "Find the Best Deal" button to the page
-function addFindBestDealButton() {
-    if (!document.getElementById('best-deal-button')) {
-        const bestDealButton = document.createElement('button');
-        bestDealButton.innerText = 'Find the Best Deal';
-        bestDealButton.id = 'best-deal-button';
-        bestDealButton.style.cssText = `
-            background-color: #ffa500;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 1000;
-            border-radius: 5px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        `;
+// Simulated API call for testing
+function searchForBestDeal(productName) {
+    // Simulate a 2-second delay to mimic an API request
+    setTimeout(() => {
+        // Simulated "best deal" data
+        const simulatedBestDeal = {
+            site: 'eBay',
+            price: '',  // Simulated price removed
+            itemUrl: 'https://www.ebay.com/itm/simulated-item-url',  // Simulated eBay item link
+            itemName: productName  // Use the product name as the simulated item name
+        };
 
-        document.body.appendChild(bestDealButton);
+        // Hide the loading animation after the simulated response
+        hideLoadingAnimation();
 
-        // On click, search for the best deal
-        bestDealButton.addEventListener('click', () => {
-            const productName = document.querySelector('#productTitle')?.innerText.trim();
-            if (productName) {
-                console.log('Finding the best deal for:', productName);
-                showLoadingAnimation();  // Show loading animation
-                searchForBestDeal(productName); // Search for the best deal using backend server
-            } else {
-                console.warn('Product name not found.');
-            }
-        });
-    }
+        // Display the simulated best deal in a popup
+        displayBestDeal(simulatedBestDeal);
+    }, 2000);  // 2-second delay to simulate network call
 }
 
-// Function to search for the best deal by sending a request to the backend server
-function searchForBestDeal(productName) {
-    fetch(`http://localhost:3000/search?productName=${encodeURIComponent(productName)}`)
-        .then(response => response.json())
-        .then(data => {
-            hideLoadingAnimation();  // Hide loading animation when results are received
+// Function to add the "Find the Best Deal" button to the page
+function addFindBestDealButton() {
+    const bestDealButton = document.createElement('button');
+    bestDealButton.innerText = 'Find the Best Deal';
+    bestDealButton.id = 'best-deal-button';
+    bestDealButton.style.cssText = `
+        background-color: #ffa500;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1000;
+        border-radius: 5px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    `;
 
-            if (data && data.length > 0) {
-                const deals = data.flatMap(site => site.deals);
-                if (deals.length > 0) {
-                    const bestDeal = deals.reduce((prev, current) => (prev.price < current.price) ? prev : current);
-                    displayBestDeal(bestDeal);
-                } else {
-                    displayNoBetterDeal();
-                }
-            } else {
-                displayNoBetterDeal();
-            }
-        })
-        .catch(error => {
-            hideLoadingAnimation();  // Hide loading animation on error
-            console.error('Error finding the best deal:', error);
-            alert('An error occurred while searching for the best deal. Please try again later.');
-        });
+    document.body.appendChild(bestDealButton);
+
+    // On click, search for the best deal (simulated for testing)
+    bestDealButton.addEventListener('click', function() {
+        const productName = document.querySelector('#productTitle')?.innerText.trim();
+        console.log('Finding the best deal for:', productName);
+        showLoadingAnimation();  // Show loading animation
+        searchForBestDeal(productName); // Simulated best deal
+    });
 }
 
 // Function to show loading animation
 function showLoadingAnimation() {
-    if (!document.getElementById('loading-overlay')) {
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.id = 'loading-overlay';
-        loadingOverlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        `;
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loading-overlay';
+    loadingOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 10000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
 
-        const spinner = document.createElement('div');
-        spinner.className = 'spinner';
-        spinner.style.cssText = `
-            border: 8px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 8px solid #3498db;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-        `;
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    spinner.style.cssText = `
+        border: 8px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 8px solid #3498db;
+        width: 60px;
+        height: 60px;
+        animation: spin 2s linear infinite;
+    `;
 
-        loadingOverlay.appendChild(spinner);
-        document.body.appendChild(loadingOverlay);
+    loadingOverlay.appendChild(spinner);
+    document.body.appendChild(loadingOverlay);
 
-        // CSS for spinner animation
-        const style = document.createElement('style');
-        style.innerHTML = `
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        `;
-        document.head.appendChild(style);
+    // CSS for spinner animation
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
+    `;
+    document.head.appendChild(style);
 }
 
 // Function to hide the loading animation
@@ -237,7 +222,7 @@ function hideLoadingAnimation() {
 // Function to display the best deal in a popup
 function displayBestDeal(deal) {
     const dealMessage = `
-        We found a better deal on ${deal.site} for $${deal.price}!
+        We found a better deal on ${deal.site} for the item: ${deal.itemName}!
         <a href="${deal.itemUrl}" target="_blank">Click here to buy</a>
     `;
 
@@ -281,7 +266,7 @@ function displayBestDeal(deal) {
 // Function to display a message when no better deal is found
 function displayNoBetterDeal() {
     const message = `
-        <p>No better deal was found on eBay, Walmart, or Best Buy.</p>
+        <p>No better deal was found on eBay.</p>
     `;
 
     const popup = document.createElement('div');
@@ -321,5 +306,5 @@ function displayNoBetterDeal() {
     document.body.appendChild(popup);
 }
 
-// Call function to add the "Find the Best Deal" button when page loads
+// Call function to add the "Find the Best Deal" button when the page loads
 addFindBestDealButton();
