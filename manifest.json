@@ -26,7 +26,8 @@
         "https://www.hepsiburada.com/*",
         "https://www.trendyol.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["compare.js", "round.js"],
+      
       "css": ["src/Popup.css"]
     }
   ],
