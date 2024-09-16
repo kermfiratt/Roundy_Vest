@@ -1,4 +1,5 @@
 import React from 'react';
+
 import Popup from './Popup';
 
 const App = ({ showPopup, setShowPopup, price, roundedPrice, investmentAmount }) => {

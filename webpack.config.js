@@ -2,10 +2,14 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: {
+    index: './src/index.js',
+    aitime: './src/aitime.js',
+    historyitem: './src/historyitem.js'  
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].bundle.js',  // Each entry gets its own bundle
   },
   module: {
     rules: [
@@ -25,8 +29,8 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './popup.html',  // Ensure this path is correct
-      filename: 'popup.html',  // This will be generated in the dist folder
+      template: './popup.html',
+      filename: 'popup.html',
     }),
   ],
   devServer: {

@@ -26,9 +26,17 @@
         "https://www.hepsiburada.com/*",
         "https://www.trendyol.com/*"
       ],
-      "js": ["compare.js", "round.js"],
-      
-      "css": ["src/Popup.css"]
+      "js": [
+        "dist/index.bundle.js",  
+        "compare.js", 
+        "round.js", 
+        "coupons.js", 
+        "dist/aitime.bundle.js",
+        "dist/historyitem.bundle.js"
+      ],
+      "css": [
+        "src/Popup.css"
+      ]
     }
   ],
   "action": {
@@ -40,6 +48,6 @@
     }
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
 }

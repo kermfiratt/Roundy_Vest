@@ -1,8 +1,11 @@
-
 // Simulated API call for testing
 function searchForBestDeal(productName) {
     // Extract the first 3 words from the product name
     const firstThreeWords = productName.split(" ").slice(0, 3).join(" ");
+
+    // Dynamically get the product image from the current page (e.g., Amazon)
+    const productImageElement = document.querySelector('#imgTagWrapperId img') || document.querySelector('#landingImage');
+    const productImage = productImageElement ? productImageElement.src : 'https://via.placeholder.com/300x300?text=No+Image+Available';  // Fallback image if not found
 
     // Simulate a 2-second delay to mimic an API request
     setTimeout(() => {
@@ -10,7 +13,9 @@ function searchForBestDeal(productName) {
         const simulatedBestDeal = {
             site: 'eBay',
             itemUrl: 'https://www.ebay.com/itm/simulated-item-url',  // Simulated eBay item link
-            itemName: firstThreeWords  // Use the first three words of the product name
+            itemName: firstThreeWords,  // Use the first three words of the product name
+            itemImage: productImage,  // Use the dynamically fetched product image
+            itemPrice: '$12.99'  // Simulated item price
         };
 
         // Hide the loading animation after the simulated response
@@ -105,14 +110,19 @@ function hideLoadingAnimation() {
 // Function to display the best deal in a popup
 function displayBestDeal(deal) {
     const dealMessage = `
-        We found a better deal on ${deal.site} for the item: ${deal.itemName}!
-        <a href="${deal.itemUrl}" target="_blank">Click here to buy</a>
+        <div class="popup-content">
+            <h2>We found a better deal on ${deal.site}!</h2>
+            <img src="${deal.itemImage}" alt="Product Image" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px; margin-right: 20px;">
+            <p><strong>Item:</strong> ${deal.itemName}</p>
+            <p><strong>Price:</strong> ${deal.itemPrice}</p>
+            <a href="${deal.itemUrl}" target="_blank" class="deal-link">Click here to buy</a>
+        </div>
     `;
 
     const dealPopup = document.createElement('div');
     dealPopup.id = 'deal-popup';
     dealPopup.style.cssText = `
-        background-color: #fff;
+        background-color: #f9f9f9;
         color: #000;
         padding: 20px;
         border-radius: 10px;
@@ -120,8 +130,10 @@ function displayBestDeal(deal) {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
         z-index: 10001;
+        width: 350px;
+        text-align: center;
     `;
     dealPopup.innerHTML = dealMessage;
 
@@ -136,6 +148,7 @@ function displayBestDeal(deal) {
         border: none;
         cursor: pointer;
         border-radius: 5px;
+        font-size: 16px;
     `;
 
     closeButton.addEventListener('click', () => {
@@ -144,49 +157,6 @@ function displayBestDeal(deal) {
 
     dealPopup.appendChild(closeButton);
     document.body.appendChild(dealPopup);
-}
-
-// Function to display a message when no better deal is found
-function displayNoBetterDeal() {
-    const message = `
-        <p>No better deal was found on eBay.</p>
-    `;
-
-    const popup = document.createElement('div');
-    popup.id = 'no-deal-popup';
-    popup.style.cssText = `
-        background-color: #fff;
-        color: #000;
-        padding: 20px;
-        border-radius: 10px;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        z-index: 10001;
-    `;
-    popup.innerHTML = message;
-
-    const closeButton = document.createElement('button');
-    closeButton.innerText = 'Close';
-    closeButton.style.cssText = `
-        display: block;
-        margin: 20px auto 0;
-        padding: 10px 20px;
-        background-color: #ffa500;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-    `;
-
-    closeButton.addEventListener('click', () => {
-        document.body.removeChild(popup);
-    });
-
-    popup.appendChild(closeButton);
-    document.body.appendChild(popup);
 }
 
 // Call function to add the "Find the Best Deal" button when page loads

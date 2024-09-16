@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import App from './App';
 
 function Main() {
@@ -28,4 +28,7 @@ function Main() {
   );
 }
 
-ReactDOM.render(<Main />, document.getElementById('root'));
+// Updated React 18 rendering method
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+root.render(<Main />);

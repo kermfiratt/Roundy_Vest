@@ -63,11 +63,11 @@ function displayPopupWithSavedPrice() {
                                 </div>
                                 <div class="button-row">
                                     <button class="percent-btn" data-percent="20">20%</button>
-                                    <button class="percent-btn" data-percent="custom">Custom</button>
+                                    <input type="number" class="custom-input" id="custom-input" placeholder="Custom %" min="1" />
                                 </div>
                             </div>
                             <p class="popup-text" id="added-amount">You will add: $${addedAmount.toFixed(2)} (10%)</p>
-                            <p class="popup-text" id="total-with-investment">Total + Investment: $${totalAmountWithInvestment.toFixed(2)}</p>
+                            <p class="popup-text" id="total-with-investment">Total After Investment: $${totalAmountWithInvestment.toFixed(2)}</p>
                             <button id="invest-button">Invest</button>
                             <button id="no-button">No</button>
                         </div>
@@ -84,19 +84,18 @@ function displayPopupWithSavedPrice() {
             // Percentage button functionality
             document.querySelectorAll('.percent-btn').forEach(button => {
                 button.addEventListener('click', function() {
-                    const selectedPercent = this.getAttribute('data-percent') === 'custom' ? getCustomPercent() : parseInt(this.getAttribute('data-percent'));
-                    if (selectedPercent) {
-                        updateAddedAmount(price, selectedPercent);
-                    }
+                    const selectedPercent = parseInt(this.getAttribute('data-percent'));
+                    updateAddedAmount(price, selectedPercent);
                 });
             });
 
-            // Custom percentage input prompt
-            function getCustomPercent() {
-                let customPercent = prompt("Enter custom percentage:");
-                customPercent = parseFloat(customPercent);
-                return isNaN(customPercent) ? null : customPercent;
-            }
+            // Custom percentage input field handling
+            document.querySelector('#custom-input').addEventListener('input', function() {
+                const customPercent = parseFloat(this.value);
+                if (!isNaN(customPercent)) {
+                    updateAddedAmount(price, customPercent);
+                }
+            });
 
             // Default action (10%)
             updateAddedAmount(price, percent);
@@ -126,7 +125,7 @@ function updateAddedAmount(price, percent) {
     const addedAmount = price * (percent / 100);
     const totalAmountWithInvestment = price + addedAmount;
     document.getElementById('added-amount').innerText = `You will add: $${addedAmount.toFixed(2)} (${percent}%)`;
-    document.getElementById('total-with-investment').innerText = `Total + Investment: $${totalAmountWithInvestment.toFixed(2)}`;
+    document.getElementById('total-with-investment').innerText = `Total After Investment: $${totalAmountWithInvestment.toFixed(2)}`;
 }
 
 // Restore last saved total price from local storage
@@ -154,13 +153,14 @@ style.innerHTML = `
     }
 
     .popup {
-        background-color: white;
-        color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        width: 300px;
+        background-color: #fff;
+        color: #333;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        width: 350px;
         text-align: center;
+        font-family: Arial, sans-serif;
     }
     
     .popup-content {
@@ -169,23 +169,23 @@ style.innerHTML = `
 
     .close {
         position: absolute;
-        top: 5px;
-        right: 5px;
+        top: 10px;
+        right: 10px;
         background: none;
         border: none;
-        color: #ffffff;
+        color: #333;
         font-size: 20px;
         cursor: pointer;
     }
 
     .popup-text {
-        color: #ffffff; /* Ensure all popup text is white */
+        color: #333;
         font-size: 18px;
-        margin: 10px 0;
+        margin: 15px 0;
     }
 
     .percentage-buttons {
-        margin: 10px 0;
+        margin: 15px 0;
     }
 
     .button-row {
@@ -195,35 +195,46 @@ style.innerHTML = `
     }
 
     .percent-btn {
-        background-color: #ff9800;
+        background-color: #007BFF;
         color: white;
         border: none;
         padding: 10px;
         font-size: 16px;
-        border-radius: 5px;
+        border-radius: 4px;
         flex: 1;
         margin: 0 5px;
         cursor: pointer;
     }
 
     .percent-btn:hover {
-        background-color: #e68900;
+        background-color: #0056b3;
+    }
+
+    .custom-input {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: 70px;
+        margin: 0 5px;
+        text-align: center;
     }
 
     #invest-button, #no-button {
-        background-color: #ff9800;
+        background-color: #007BFF;
         color: white;
         border: none;
-        padding: 10px;
+        padding: 12px;
         font-size: 16px;
-        border-radius: 5px;
+        border-radius: 4px;
         cursor: pointer;
         width: 100%;
         margin: 10px 0;
     }
 
     #invest-button:hover, #no-button:hover {
-        background-color: #e68900;
+        background-color: #0056b3;
     }
 `;
 document.head.appendChild(style);
