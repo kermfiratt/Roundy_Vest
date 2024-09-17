@@ -5,7 +5,12 @@ module.exports = {
   entry: {
     index: './src/index.js',
     aitime: './src/aitime.js',
-    historyitem: './src/historyitem.js'  
+    historyitem: './src/historyitem.js',
+     cartviser: './src/cartviser.js',
+     copuons: './coupons.js',
+     compare: './compare.js',
+     round: './round.js'
+
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

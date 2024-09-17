@@ -28,11 +28,12 @@
       ],
       "js": [
         "dist/index.bundle.js",  
-        "compare.js", 
-        "round.js", 
-        "coupons.js", 
+        "./compare.js", 
+        "./round.js", 
+        "./coupons.js", 
         "dist/aitime.bundle.js",
-        "dist/historyitem.bundle.js"
+        "dist/historyitem.bundle.js",
+        "dist/cartviser.bundle.js"
       ],
       "css": [
         "src/Popup.css"
