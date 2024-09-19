@@ -1,7 +1,7 @@
 console.log("Coupons script loaded");
 
 // Function to simulate fetching coupons
-export function searchForCoupons() {
+function searchForCoupons() {
     // Simulate a delay to mimic an API request for coupons
     showLoadingAnimation();  // Show loading animation while searching
 
@@ -12,12 +12,15 @@ export function searchForCoupons() {
             description: "Get 10% off on your purchase!"
         };
 
-        hideLoadingAnimation();  // Hide the loading animation
-        displayCoupon(simulatedCoupon);  // Display the fetched coupon
+        hideLoadingAnimation();
+        displayCoupon(simulatedCoupon);
     }, 2000);
 }
 
-// Function to display the coupon in a popup (triggered by CartViser panel)
+// Attach the function to the window object so it's accessible globally
+window.searchForCoupons = searchForCoupons;
+
+// Function to display the coupon in a popup
 function displayCoupon(coupon) {
     const couponMessage = `
         <div class="coupon-content">
@@ -92,15 +95,16 @@ function showLoadingAnimation() {
     spinner.style.cssText = `
         border: 8px solid #f3f3f3;
         border-radius: 50%;
-        border-top: 8px solid #ffa500;
+        border-top: 8px solid #3498db;
         width: 60px;
         height: 60px;
-        animation: spin 1.5s linear infinite;
+        animation: spin 2s linear infinite;
     `;
 
     loadingOverlay.appendChild(spinner);
     document.body.appendChild(loadingOverlay);
 
+    // Add spinner animation
     const style = document.createElement('style');
     style.innerHTML = `
     @keyframes spin {
@@ -118,6 +122,3 @@ function hideLoadingAnimation() {
         document.body.removeChild(loadingOverlay);
     }
 }
-
-// Export the necessary functions for CartViser
-export { displayCoupon, showLoadingAnimation, hideLoadingAnimation };

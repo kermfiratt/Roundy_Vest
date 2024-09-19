@@ -3,7 +3,7 @@ console.log("CartViser script loaded");
 import { showHistoryPopup } from './historyitem.js';
 import { showPriceHistoryPopup } from './aitime.js';
 import { searchForCoupons } from '../coupons.js';
-import { searchBestDeal } from '../compare.js';
+import { searchForBestDeal } from '../compare.js';
 
 // Simulated stock prices (can be replaced with real data later)
 const stockPrices = [
@@ -17,59 +17,12 @@ const stockPrices = [
     { symbol: "ADBE", price: "$450.10", change: "+0.5%" },
     { symbol: "UBER", price: "$48.23", change: "-1.0%" },
     { symbol: "SAMS", price: "$90.12", change: "+0.6%" },
-    { symbol: "FB", price: "$350.55", change: "+1.4%" },    // Added more stocks
+    { symbol: "FB", price: "$350.55", change: "+1.4%" },
     { symbol: "DIS", price: "$185.25", change: "-0.9%" },
     { symbol: "PYPL", price: "$278.50", change: "+1.3%" },
     { symbol: "TWTR", price: "$45.89", change: "+0.9%" },
     { symbol: "BABA", price: "$218.36", change: "+0.5%" },
-    { symbol: "ORCL", price: "$85.23", change: "-1.2%" },
-    { symbol: "NFLX", price: "$502.19", change: "+2.3%" },
-    { symbol: "V", price: "$235.78", change: "+1.1%" },
-    { symbol: "MA", price: "$380.45", change: "-0.3%" },
-    { symbol: "INTC", price: "$54.10", change: "+1.8%" },
-    { symbol: "AMD", price: "$92.15", change: "-0.9%" },
-    { symbol: "KO", price: "$55.44", change: "+0.7%" },
-    { symbol: "PEP", price: "$154.56", change: "-0.5%" },
-    { symbol: "SBUX", price: "$115.23", change: "+2.1%" },
-    { symbol: "CSCO", price: "$49.65", change: "-1.4%" },
-    { symbol: "CRM", price: "$250.90", change: "+3.0%" },
-    { symbol: "BA", price: "$220.33", change: "-1.7%" },
-    { symbol: "CAT", price: "$206.45", change: "+1.6%" },
-    { symbol: "MCD", price: "$230.77", change: "+0.2%" },
-    { symbol: "GS", price: "$355.23", change: "+1.9%" },
-    { symbol: "JPM", price: "$153.40", change: "-0.8%" },
-    { symbol: "XOM", price: "$61.10", change: "+2.5%" },
-    { symbol: "CVX", price: "$100.15", change: "-1.1%" },
-    { symbol: "T", price: "$29.20", change: "+0.4%" },
-    { symbol: "VZ", price: "$56.33", change: "-0.2%" },
-    { symbol: "WMT", price: "$140.67", change: "+1.3%" },
-    { symbol: "TGT", price: "$190.45", change: "-2.0%" },
-    { symbol: "HD", price: "$328.95", change: "+1.4%" },
-    { symbol: "LOW", price: "$198.33", change: "+0.9%" },
-    { symbol: "MRNA", price: "$320.12", change: "+0.5%" },
-    { symbol: "PFE", price: "$42.67", change: "-1.3%" },
-    { symbol: "JNJ", price: "$165.23", change: "+0.8%" },
-    { symbol: "ABBV", price: "$125.12", change: "+2.0%" },
-    { symbol: "GE", price: "$102.45", change: "-1.0%" },
-    { symbol: "DIS", price: "$180.10", change: "+1.2%" },
-    { symbol: "PYPL", price: "$275.55", change: "-0.7%" },
-    { symbol: "SQ", price: "$232.45", change: "+1.9%" },
-    { symbol: "ZM", price: "$320.30", change: "-2.5%" },
-    { symbol: "DOCU", price: "$250.89", change: "+1.8%" },
-    { symbol: "TWTR", price: "$50.22", change: "+0.4%" },
-    { symbol: "UBER", price: "$45.33", change: "-0.6%" },
-    { symbol: "LYFT", price: "$50.45", change: "+0.9%" },
-    { symbol: "SPOT", price: "$250.50", change: "-1.0%" },
-    { symbol: "SHOP", price: "$1450.78", change: "+2.2%" },
-    { symbol: "DASH", price: "$190.60", change: "-0.5%" },
-    { symbol: "NKE", price: "$145.67", change: "+1.6%" },
-    { symbol: "ADBE", price: "$540.90", change: "+0.3%" },
-    { symbol: "TSM", price: "$115.33", change: "-1.8%" },
-    { symbol: "JD", price: "$72.12", change: "+1.4%" }, 
-    { symbol: "BIDU", price: "$180.33", change: "-0.7%" },
-    { symbol: "RBLX", price: "$80.10", change: "+2.8%" },
-    { symbol: "SNOW", price: "$290.45", change: "-1.9%" },
-    { symbol: "PLTR", price: "$25.33", change: "+1.1%" }
+    { symbol: "ORCL", price: "$85.23", change: "-1.2%" }
 ];
 
 // Function to toggle the CartViser panel
@@ -117,8 +70,7 @@ function createCartViserPanel() {
                 (${stock.change})
             </span>
         </span>`).join('')}
-</div>
-
+                    </div>
                 </div>
                 <button class="close-panel">&times;</button>
             </div>
@@ -182,12 +134,12 @@ function createCartViserPanel() {
     });
     
     document.getElementById('feature-coupons').addEventListener('click', () => {
-        searchForCoupons();
+        window.searchForCoupons();
         toggleCartViserPanel(); // Close panel after action
     });
     
     document.getElementById('feature-best-deal').addEventListener('click', () => {
-        searchBestDeal();
+        window.searchForBestDeal();
         toggleCartViserPanel(); // Close panel after action
     });
 }
